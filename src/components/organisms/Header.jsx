@@ -1,9 +1,13 @@
-import React from "react";
+import React, { useContext } from "react";
+import { useSelector } from 'react-redux';
 import ApperIcon from "@/components/ApperIcon";
 import { useLocation } from "react-router-dom";
+import { AuthContext } from "../../App";
 
 const Header = ({ onMobileMenuToggle }) => {
   const location = useLocation();
+  const { logout } = useContext(AuthContext);
+  const { user } = useSelector((state) => state.user);
   
   const getPageTitle = () => {
     switch (location.pathname) {
@@ -13,9 +17,15 @@ const Header = ({ onMobileMenuToggle }) => {
         return "Jobs";
       case "/candidates":
         return "Candidates";
+      case "/clients":
+        return "Clients";
       default:
         return "Dashboard";
     }
+  };
+
+  const handleLogout = async () => {
+    await logout();
   };
 
   return (
@@ -48,6 +58,13 @@ const Header = ({ onMobileMenuToggle }) => {
           </button>
           <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
             <ApperIcon name="Settings" size={20} />
+          </button>
+          <button 
+            onClick={handleLogout}
+            className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            title="Logout"
+          >
+            <ApperIcon name="LogOut" size={20} />
           </button>
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center shadow-lg">
             <ApperIcon name="User" size={16} className="text-white" />

@@ -69,33 +69,42 @@ async function loadJobs() {
     setIsApplyModalOpen(true)
   }
 
-  function handleApplicationCreated(newApplication) {
+function handleApplicationCreated(newApplication) {
     setApplications(prev => [...prev, newApplication])
     
     // Update job applicants count
     setJobs(prev => prev.map(job => 
-      job.Id === newApplication.jobId 
-        ? { ...job, applicants: (job.applicants || 0) + 1 }
+      job.Id === (newApplication.jobId_c || newApplication.jobId)
+        ? { ...job, applicants_c: ((job.applicants_c || job.applicants) || 0) + 1 }
         : job
     ))
   }
 async function handleSaveJob(jobData) {
     try {
-      // Find client company name from clientId
       const client = clients.find(c => c.Id === parseInt(jobData.clientId))
-      const jobWithClient = {
-        ...jobData,
-        company: client ? client.companyName : jobData.company
+      const mappedJobData = {
+        Name: jobData.title,
+        title_c: jobData.title,
+        company_c: client ? (client.companyName_c || client.companyName) : jobData.company,
+        location_c: jobData.location,
+        jobType_c: jobData.jobType || "Full-time",
+        salaryMin_c: jobData.salaryMin ? parseInt(jobData.salaryMin) : null,
+        salaryMax_c: jobData.salaryMax ? parseInt(jobData.salaryMax) : null,
+        requiredSkills_c: jobData.requiredSkills,
+        experienceLevel_c: jobData.experienceLevel || "Mid-level",
+        description_c: jobData.description,
+        status_c: jobData.status || "active",
+        clientId_c: jobData.clientId ? parseInt(jobData.clientId) : null
       }
       
       if (editingJob) {
-        const updatedJob = await jobService.update(editingJob.Id, jobWithClient)
+        const updatedJob = await jobService.update(editingJob.Id, mappedJobData)
         setJobs(prev => prev.map(job => 
           job.Id === editingJob.Id ? updatedJob : job
         ))
         toast.success('Job updated successfully!')
       } else {
-        const newJob = await jobService.create(jobWithClient)
+        const newJob = await jobService.create(mappedJobData)
         setJobs(prev => [newJob, ...prev])
         toast.success('Job created successfully!')
       }
@@ -120,20 +129,23 @@ async function handleSaveJob(jobData) {
 }
   }
 
-  const getAppliedCandidatesForJob = (jobId) => {
-    const jobApplications = applications.filter(app => app.jobId === jobId)
+const getAppliedCandidatesForJob = (jobId) => {
+    const jobApplications = applications.filter(app => (app.jobId_c || app.jobId) === jobId)
     return jobApplications.map(app => 
-      candidates.find(candidate => candidate.Id === app.candidateId)
+      candidates.find(candidate => candidate.Id === (app.candidateId_c || app.candidateId))
     ).filter(Boolean)
   }
 
 const filteredJobs = jobs.filter(job => {
     const searchLower = searchTerm.toLowerCase()
-    const client = clients.find(c => c.companyName === job.company)
-    return job.title.toLowerCase().includes(searchLower) ||
-           job.company.toLowerCase().includes(searchLower) ||
-           job.description.toLowerCase().includes(searchLower) ||
-           (client?.contactPerson?.toLowerCase().includes(searchLower))
+    const jobTitle = job.title_c || job.title || '';
+    const jobCompany = job.company_c || job.company || '';
+    const jobDescription = job.description_c || job.description || '';
+    const client = clients.find(c => (c.companyName_c || c.companyName) === jobCompany)
+    return jobTitle.toLowerCase().includes(searchLower) ||
+           jobCompany.toLowerCase().includes(searchLower) ||
+           jobDescription.toLowerCase().includes(searchLower) ||
+           (client?.contactPerson_c || client?.contactPerson || '').toLowerCase().includes(searchLower)
   })
   return (
     <div className="space-y-6">

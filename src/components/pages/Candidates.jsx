@@ -14,7 +14,7 @@ import Badge from "@/components/atoms/Badge";
 import Button from "@/components/atoms/Button";
 
 function Candidates() {
-const [candidates, setCandidates] = useState([])
+  const [candidates, setCandidates] = useState([])
   const [jobs, setJobs] = useState([])
   const [applications, setApplications] = useState([])
   const [loading, setLoading] = useState(true)
@@ -24,7 +24,7 @@ const [candidates, setCandidates] = useState([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [selectedCandidate, setSelectedCandidate] = useState(null)
-const [modalMode, setModalMode] = useState('add')
+  const [modalMode, setModalMode] = useState('add')
 
   const statusOptions = [
     { value: 'all', label: 'All Candidates' },
@@ -40,7 +40,7 @@ const [modalMode, setModalMode] = useState('add')
 
   async function loadCandidates() {
     setLoading(true)
-setError(null)
+    setError(null)
     
     try {
       const [candidatesData, jobsData, applicationsData] = await Promise.all([
@@ -49,18 +49,18 @@ setError(null)
         applicationService.getAll()
       ])
       
-      setCandidates(candidatesData)
-      setJobs(jobsData)
-      setApplications(applicationsData)
+      setCandidates(candidatesData || [])
+      setJobs(jobsData || [])
+      setApplications(applicationsData || [])
     } catch (err) {
       setError('Failed to load candidates. Please try again.')
       console.error('Failed to load candidates:', err)
     } finally {
       setLoading(false)
     }
-}
+  }
 
-function handleViewCandidate(candidate) {
+  function handleViewCandidate(candidate) {
     setSelectedCandidate(candidate)
     setModalMode('view')
     setIsModalOpen(true)
@@ -73,29 +73,42 @@ function handleViewCandidate(candidate) {
   }
 
   function handleContactCandidate(candidate) {
-    // Simulate contact action
-    toast.info(`Contacting ${candidate.name}...`)
-    // In a real app, this might open email client or phone dialer
+    const candidateName = candidate?.Name || candidate?.name || 'candidate';
+    toast.info(`Contacting ${candidateName}...`)
   }
 
   async function handleAddCandidate(candidateData) {
     try {
-      const newCandidate = await candidateService.create(candidateData)
+      const mappedData = {
+        Name: candidateData.name,
+        email_c: candidateData.email,
+        phone_c: candidateData.phone,
+        location_c: candidateData.location,
+        currentJobTitle_c: candidateData.currentJobTitle,
+        position_c: candidateData.position,
+        status_c: candidateData.status || "new",
+        appliedAt_c: candidateData.appliedAt || new Date().toISOString(),
+        experienceLevel_c: candidateData.experienceLevel || "entry",
+        skills_c: candidateData.skills,
+        resumeSummary_c: candidateData.resumeSummary,
+        availability_c: candidateData.availability || "available"
+      };
+
+      const newCandidate = await candidateService.create(mappedData)
       setCandidates(prev => [newCandidate, ...prev])
       toast.success('Candidate added successfully!')
     } catch (error) {
       toast.error(error.message || 'Failed to add candidate')
       throw error
-}
+    }
   }
 
   async function handleStatusChange(applicationId, newStatus) {
     try {
       await applicationService.updateStatus(applicationId, newStatus);
       
-      // Reload applications to get updated data
       const updatedApplications = await applicationService.getAll();
-      setApplications(updatedApplications);
+      setApplications(updatedApplications || []);
       
       toast.success('Application status updated successfully!');
     } catch (error) {
@@ -104,17 +117,17 @@ function handleViewCandidate(candidate) {
     }
   }
 
-  // Helper function to determine candidate status from their applications
   function getCandidateStatus(candidateId) {
-    const candidateApplications = applications.filter(app => app.candidateId === candidateId);
+    const candidateApplications = applications.filter(app => 
+      (app.candidateId_c || app.candidateId) === candidateId
+    );
     
     if (candidateApplications.length === 0) return 'new';
     
-    // Priority order for determining overall candidate status
     const statusPriority = ['hired', 'rejected', 'final_review', 'interview_scheduled', 'screening', 'applied'];
     
     for (const status of statusPriority) {
-      if (candidateApplications.some(app => app.status === status)) {
+      if (candidateApplications.some(app => (app.status_c || app.status) === status)) {
         return status === 'applied' ? 'new' : 
                status === 'screening' ? 'interviewed' :
                status === 'interview_scheduled' ? 'interviewed' :
@@ -129,9 +142,8 @@ function handleViewCandidate(candidate) {
     try {
       await applicationService.update(applicationId, updates)
       
-      // Reload applications to get updated data
       const updatedApplications = await applicationService.getAll()
-      setApplications(updatedApplications)
+      setApplications(updatedApplications || [])
       
       toast.success('Application updated successfully!')
     } catch (error) {
@@ -140,25 +152,29 @@ function handleViewCandidate(candidate) {
     }
   }
 
-const getCandidateApplications = (candidateId) => {
-    const candidateApplications = applications.filter(app => app.candidateId === candidateId)
+  const getCandidateApplications = (candidateId) => {
+    const candidateApplications = applications.filter(app => 
+      (app.candidateId_c || app.candidateId) === candidateId
+    )
     return candidateApplications.map(app => {
-      const job = jobs.find(job => job.Id === app.jobId)
+      const job = jobs.find(job => job.Id === (app.jobId_c || app.jobId))
       return {
         ...app,
-        jobTitle: job?.title || 'Unknown Position'
+        jobTitle: job?.title_c || job?.title || 'Unknown Position'
       }
     })
   }
 
   const getAppliedJobsForCandidate = (candidateId) => {
-    const candidateApplications = applications.filter(app => app.candidateId === candidateId)
+    const candidateApplications = applications.filter(app => 
+      (app.candidateId_c || app.candidateId) === candidateId
+    )
     return candidateApplications.map(app => 
-      jobs.find(job => job.Id === app.jobId)
+      jobs.find(job => job.Id === (app.jobId_c || app.jobId))
     ).filter(Boolean)
   }
 
-function getStatusCounts() {
+  function getStatusCounts() {
     const counts = {
       all: candidates.length,
       new: 0,
@@ -179,54 +195,61 @@ function getStatusCounts() {
 
   const statusCounts = getStatusCounts()
   
-const filteredCandidates = candidates.filter(candidate => {
+  const filteredCandidates = candidates.filter(candidate => {
+    const candidateName = candidate?.Name || candidate?.name || '';
+    const candidatePosition = candidate?.position_c || candidate?.position || '';
+    const candidateSkills = candidate?.skills_c || candidate?.skills || [];
+    
     const matchesSearch = !searchTerm || 
-      candidate.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      candidate.position?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      candidate.skills?.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase()))
+      candidateName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      candidatePosition.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (Array.isArray(candidateSkills) ? candidateSkills : candidateSkills.split(',')).some(skill => 
+        skill.toLowerCase().includes(searchTerm.toLowerCase())
+      )
     
     const candidateStatus = getCandidateStatus(candidate.Id);
     const matchesStatus = statusFilter === 'all' || candidateStatus === statusFilter;
     
     return matchesSearch && matchesStatus;
   })
+
   return (
-<div className="space-y-6">
-{/* Header */}
-<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-<div>
-<h1 className="text-2xl font-bold font-display text-gray-900">
-Candidate Pool
-</h1>
-<p className="text-gray-600">
-Review and manage job applicants
-</p>
-</div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold font-display text-gray-900">
+            Candidate Pool
+          </h1>
+          <p className="text-gray-600">
+            Review and manage job applicants
+          </p>
+        </div>
 
-<div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-{/* Add Candidate Button */}
-<Button
-onClick={() => setIsAddModalOpen(true)}
-className="flex items-center gap-2"
->
-<ApperIcon name="Plus" size={16} />
-Add Candidate
-</Button>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          {/* Add Candidate Button */}
+          <Button
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex items-center gap-2"
+          >
+            <ApperIcon name="Plus" size={16} />
+            Add Candidate
+          </Button>
 
-{/* Status Overview */}
-<div className="flex items-center space-x-2">
-<Badge variant="primary">
-{statusCounts.new} New
-</Badge>
-<Badge variant="secondary">
-{statusCounts.interviewed} Interviewed
-</Badge>
-<Badge variant="active">
-{statusCounts.hired} Hired
-</Badge>
-</div>
-</div>
-</div>
+          {/* Status Overview */}
+          <div className="flex items-center space-x-2">
+            <Badge variant="primary">
+              {statusCounts.new} New
+            </Badge>
+            <Badge variant="secondary">
+              {statusCounts.interviewed} Interviewed
+            </Badge>
+            <Badge variant="active">
+              {statusCounts.hired} Hired
+            </Badge>
+          </div>
+        </div>
+      </div>
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
@@ -254,7 +277,7 @@ Add Candidate
         </div>
       </div>
 
-{/* Content */}
+      {/* Content */}
       {loading ? (
         <Loading />
       ) : error ? (
@@ -268,7 +291,7 @@ Add Candidate
           }
         />
       ) : (
-<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredCandidates.map(candidate => (
             <CandidateCard
               key={candidate.Id}
@@ -282,7 +305,7 @@ Add Candidate
         </div>
       )}
 
-{/* View/Edit Candidate Modal */}
+      {/* View/Edit Candidate Modal */}
       <CandidateProfileModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -294,8 +317,8 @@ Add Candidate
         onStatusChange={handleStatusChange}
       />
 
-{/* Add Candidate Modal */}
-<CandidateProfileModal
+      {/* Add Candidate Modal */}
+      <CandidateProfileModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onSave={handleAddCandidate}

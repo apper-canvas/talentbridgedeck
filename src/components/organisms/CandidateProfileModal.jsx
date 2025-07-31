@@ -37,17 +37,17 @@ function CandidateProfileModal({
   mode = 'view' // 'view', 'edit', 'create'
 }) {
 // State management - MUST be called before any conditional returns
-  const [formData, setFormData] = useState({
-    name: candidate?.name ?? '',
-    email: candidate?.email ?? '',
-    phone: candidate?.phone ?? '',
-    location: candidate?.location ?? '',
-    currentJobTitle: candidate?.currentJobTitle ?? '',
-    position: candidate?.position ?? '',
-    experienceLevel: candidate?.experienceLevel ?? 'entry',
-    skills: candidate?.skills ?? [],
-    resumeSummary: candidate?.resumeSummary ?? '',
-    availability: candidate?.availability ?? 'available'
+const [formData, setFormData] = useState({
+    name: candidate?.Name || candidate?.name || '',
+    email: candidate?.email_c || candidate?.email || '',
+    phone: candidate?.phone_c || candidate?.phone || '',
+    location: candidate?.location_c || candidate?.location || '',
+    currentJobTitle: candidate?.currentJobTitle_c || candidate?.currentJobTitle || '',
+    position: candidate?.position_c || candidate?.position || '',
+    experienceLevel: candidate?.experienceLevel_c || candidate?.experienceLevel || 'entry',
+    skills: candidate?.skills_c || candidate?.skills || [],
+    resumeSummary: candidate?.resumeSummary_c || candidate?.resumeSummary || '',
+    availability: candidate?.availability_c || candidate?.availability || 'available'
   });
 
   const [errors, setErrors] = useState({});
@@ -60,17 +60,18 @@ function CandidateProfileModal({
 // Separate useEffect for form data initialization to prevent infinite loops
   useEffect(() => {
     if (candidate && (mode === "view" || mode === "edit")) {
+      const candidateSkills = candidate.skills_c || candidate.skills || [];
       setFormData({
-        name: candidate.name || "",
-        email: candidate.email || "",
-        phone: candidate.phone || "",
-        location: candidate.location || "",
-        currentJobTitle: candidate.currentJobTitle || "",
-        position: candidate.position || "",
-        experienceLevel: candidate.experienceLevel || "entry",
-        skills: candidate.skills || [],
-        resumeSummary: candidate.resumeSummary || "",
-        availability: candidate.availability || "available"
+        name: candidate.Name || candidate.name || "",
+        email: candidate.email_c || candidate.email || "",
+        phone: candidate.phone_c || candidate.phone || "",
+        location: candidate.location_c || candidate.location || "",
+        currentJobTitle: candidate.currentJobTitle_c || candidate.currentJobTitle || "",
+        position: candidate.position_c || candidate.position || "",
+        experienceLevel: candidate.experienceLevel_c || candidate.experienceLevel || "entry",
+        skills: Array.isArray(candidateSkills) ? candidateSkills : (candidateSkills ? candidateSkills.split(',') : []),
+        resumeSummary: candidate.resumeSummary_c || candidate.resumeSummary || "",
+        availability: candidate.availability_c || candidate.availability || "available"
       });
     }
   }, [candidate, mode]);
@@ -525,8 +526,8 @@ return (
         />
       )}
     </AnimatePresence>
-    </>
+</>
   );
-};
+}
 
 export default CandidateProfileModal;

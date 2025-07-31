@@ -29,11 +29,11 @@ const NotesModal = ({
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
+useEffect(() => {
     if (note) {
       setFormData({
-        category: note.category || "Phone Call",
-        content: note.content || ""
+        category: note.category_c || note.category || "Phone Call",
+        content: note.content_c || note.content || ""
       });
     } else {
       setFormData({
@@ -75,11 +75,12 @@ const handleSubmit = async (e) => {
     setIsSubmitting(true);
     
     try {
-      const noteData = {
-        ...formData,
-        entityType,
-        entityId
-};
+const noteData = {
+        entityType_c: entityType,
+        entityId_c: entityId,
+        category_c: formData.category,
+        content_c: formData.content
+      };
       
       await onSave(noteData);
     } catch (error) {

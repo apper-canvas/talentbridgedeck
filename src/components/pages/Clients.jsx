@@ -1,15 +1,15 @@
-import React, { useEffect, useState } from 'react'
-import { clientService } from '@/services/api/clientService'
-import { toast } from 'react-toastify'
-import ApperIcon from '@/components/ApperIcon'
-import SearchBar from '@/components/molecules/SearchBar'
-import ClientModal from '@/components/organisms/ClientModal'
-import Loading from '@/components/ui/Loading'
-import Error from '@/components/ui/Error'
-import Empty from '@/components/ui/Empty'
-import Button from '@/components/atoms/Button'
-import { Card, CardContent } from '@/components/atoms/Card'
-import Badge from '@/components/atoms/Badge'
+import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import { clientService } from "@/services/api/clientService";
+import ApperIcon from "@/components/ApperIcon";
+import SearchBar from "@/components/molecules/SearchBar";
+import ClientModal from "@/components/organisms/ClientModal";
+import Loading from "@/components/ui/Loading";
+import Error from "@/components/ui/Error";
+import Empty from "@/components/ui/Empty";
+import Badge from "@/components/atoms/Badge";
+import Button from "@/components/atoms/Button";
+import { Card, CardContent } from "@/components/atoms/Card";
 
 function Clients() {
   const [clients, setClients] = useState([])
@@ -49,16 +49,26 @@ function Clients() {
     setIsModalOpen(true)
   }
 
-  async function handleSaveClient(clientData) {
+async function handleSaveClient(clientData) {
     try {
+      const mappedData = {
+        Name: clientData.companyName,
+        companyName_c: clientData.companyName,
+        contactPerson_c: clientData.contactPerson,
+        email_c: clientData.email,
+        phone_c: clientData.phone,
+        address_c: clientData.address,
+        relationshipStatus_c: clientData.relationshipStatus || "prospect"
+      };
+
       if (editingClient) {
-        const updatedClient = await clientService.update(editingClient.Id, clientData)
+        const updatedClient = await clientService.update(editingClient.Id, mappedData)
         setClients(prev => prev.map(client => 
           client.Id === editingClient.Id ? updatedClient : client
         ))
         toast.success('Client updated successfully!')
       } else {
-        const newClient = await clientService.create(clientData)
+        const newClient = await clientService.create(mappedData)
         setClients(prev => [newClient, ...prev])
         toast.success('Client created successfully!')
       }
@@ -69,8 +79,9 @@ function Clients() {
     }
   }
 
-  async function handleDeleteClient(client) {
-    if (window.confirm(`Are you sure you want to delete ${client.companyName}?`)) {
+async function handleDeleteClient(client) {
+    const companyName = client.companyName_c || client.companyName || 'this client';
+    if (window.confirm(`Are you sure you want to delete ${companyName}?`)) {
       try {
         await clientService.delete(client.Id)
         setClients(prev => prev.filter(c => c.Id !== client.Id))
@@ -82,13 +93,18 @@ function Clients() {
     }
   }
 
-  const filteredClients = clients.filter(client => {
+const filteredClients = clients.filter(client => {
     const searchLower = searchTerm.toLowerCase()
-    const matchesSearch = client.companyName.toLowerCase().includes(searchLower) ||
-                         client.contactPerson.toLowerCase().includes(searchLower) ||
-                         client.email.toLowerCase().includes(searchLower)
+    const companyName = client.companyName_c || client.companyName || '';
+    const contactPerson = client.contactPerson_c || client.contactPerson || '';
+    const email = client.email_c || client.email || '';
+    const relationshipStatus = client.relationshipStatus_c || client.relationshipStatus || '';
     
-    const matchesStatus = statusFilter === 'all' || client.relationshipStatus === statusFilter
+    const matchesSearch = companyName.toLowerCase().includes(searchLower) ||
+                         contactPerson.toLowerCase().includes(searchLower) ||
+                         email.toLowerCase().includes(searchLower)
+    
+    const matchesStatus = statusFilter === 'all' || relationshipStatus === statusFilter
     
     return matchesSearch && matchesStatus
   })
@@ -174,9 +190,9 @@ function Clients() {
                 <ApperIcon name="CheckCircle" size={20} className="text-green-600" />
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-600">Active</p>
+<p className="text-sm font-medium text-gray-600">Active</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {clients.filter(c => c.relationshipStatus === 'active').length}
+                  {clients.filter(c => (c.relationshipStatus_c || c.relationshipStatus) === 'active').length}
                 </p>
               </div>
             </div>
@@ -192,7 +208,7 @@ function Clients() {
               <div className="ml-3">
                 <p className="text-sm font-medium text-gray-600">Prospects</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {clients.filter(c => c.relationshipStatus === 'prospect').length}
+                  {clients.filter(c => (c.relationshipStatus_c || c.relationshipStatus) === 'prospect').length}
                 </p>
               </div>
             </div>
@@ -206,9 +222,9 @@ function Clients() {
                 <ApperIcon name="XCircle" size={20} className="text-gray-600" />
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-600">Inactive</p>
+<p className="text-sm font-medium text-gray-600">Inactive</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {clients.filter(c => c.relationshipStatus === 'inactive').length}
+                  {clients.filter(c => (c.relationshipStatus_c || c.relationshipStatus) === 'inactive').length}
                 </p>
               </div>
             </div>
@@ -237,16 +253,16 @@ function Clients() {
             <Card key={client.Id} className="hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02]">
               <CardContent className="p-6">
                 <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
+<div className="flex-1">
                     <h3 className="text-lg font-semibold font-display text-gray-900 mb-1">
-                      {client.companyName}
+                      {client.companyName_c || client.companyName}
                     </h3>
                     <div className="flex items-center text-sm text-gray-600 mb-2">
                       <ApperIcon name="User" size={14} className="mr-1" />
-                      {client.contactPerson}
+                      {client.contactPerson_c || client.contactPerson}
                     </div>
-                    <Badge variant={getStatusVariant(client.relationshipStatus)}>
-                      {client.relationshipStatus}
+                    <Badge variant={getStatusVariant(client.relationshipStatus_c || client.relationshipStatus)}>
+                      {client.relationshipStatus_c || client.relationshipStatus}
                     </Badge>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -265,18 +281,18 @@ function Clients() {
                   </div>
                 </div>
                 
-                <div className="space-y-2 text-sm text-gray-600">
+<div className="space-y-2 text-sm text-gray-600">
                   <div className="flex items-center">
                     <ApperIcon name="Mail" size={14} className="mr-2 text-gray-400" />
-                    <span className="truncate">{client.email}</span>
+                    <span className="truncate">{client.email_c || client.email}</span>
                   </div>
                   <div className="flex items-center">
                     <ApperIcon name="Phone" size={14} className="mr-2 text-gray-400" />
-                    <span>{client.phone}</span>
+                    <span>{client.phone_c || client.phone}</span>
                   </div>
                   <div className="flex items-start">
                     <ApperIcon name="MapPin" size={14} className="mr-2 mt-0.5 text-gray-400 flex-shrink-0" />
-                    <span className="line-clamp-2">{client.address}</span>
+                    <span className="line-clamp-2">{client.address_c || client.address}</span>
                   </div>
                 </div>
               </CardContent>

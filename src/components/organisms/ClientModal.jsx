@@ -19,15 +19,15 @@ const ClientModal = ({ isOpen, onClose, onSave, client = null }) => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
+useEffect(() => {
     if (client) {
       setFormData({
-        companyName: client.companyName || "",
-        contactPerson: client.contactPerson || "",
-        email: client.email || "",
-        phone: client.phone || "",
-        address: client.address || "",
-        relationshipStatus: client.relationshipStatus || "prospect"
+        companyName: client.companyName_c || client.companyName || "",
+        contactPerson: client.contactPerson_c || client.contactPerson || "",
+        email: client.email_c || client.email || "",
+        phone: client.phone_c || client.phone || "",
+        address: client.address_c || client.address || "",
+        relationshipStatus: client.relationshipStatus_c || client.relationshipStatus || "prospect"
       });
     } else {
       setFormData({

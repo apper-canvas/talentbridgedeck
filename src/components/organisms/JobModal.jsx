@@ -26,22 +26,22 @@ const [formData, setFormData] = useState({
 
 useEffect(() => {
     if (job) {
-      // Find client by company name
-      const client = clients.find(c => c.companyName === job.company)
+      const jobCompany = job.company_c || job.company || '';
+      const client = clients.find(c => (c.companyName_c || c.companyName) === jobCompany)
       setFormData({
-        title: job.title || "",
-        clientId: client ? client.Id.toString() : "",
-        company: job.company || "",
-        location: job.location || "",
-        jobType: job.jobType || "Full-time",
-        salaryMin: job.salaryMin || "",
-        salaryMax: job.salaryMax || "",
-        requiredSkills: job.requiredSkills || "",
-        experienceLevel: job.experienceLevel || "Mid-level",
-        description: job.description || "",
-        status: job.status || "active"
+        title: job.title_c || job.title || "",
+        clientId: job.clientId_c || (client ? client.Id.toString() : ""),
+        company: jobCompany,
+        location: job.location_c || job.location || "",
+        jobType: job.jobType_c || job.jobType || "Full-time",
+        salaryMin: job.salaryMin_c || job.salaryMin || "",
+        salaryMax: job.salaryMax_c || job.salaryMax || "",
+        requiredSkills: job.requiredSkills_c || job.requiredSkills || "",
+        experienceLevel: job.experienceLevel_c || job.experienceLevel || "Mid-level",
+        description: job.description_c || job.description || "",
+        status: job.status_c || job.status || "active"
       });
-} else {
+    } else {
       setFormData({
         title: "",
         clientId: "",
@@ -57,7 +57,7 @@ useEffect(() => {
       });
     }
     setErrors({});
-  }, [job, isOpen]);
+  }, [job, isOpen, clients]);
 
 const validateForm = () => {
     const newErrors = {};
@@ -185,15 +185,15 @@ const validateForm = () => {
                       className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
                     >
                       <option value="">Select a client...</option>
-                      {clients.filter(c => c.relationshipStatus === 'active').map((client) => (
+{clients.filter(c => (c.relationshipStatus_c || c.relationshipStatus) === 'active').map((client) => (
                         <option key={client.Id} value={client.Id}>
-                          {client.companyName}
+                          {client.companyName_c || client.companyName}
                         </option>
                       ))}
                     </select>
-                    {formData.clientId && (
+{formData.clientId && (
                       <div className="mt-2 text-xs text-gray-600">
-                        Contact: {clients.find(c => c.Id.toString() === formData.clientId)?.contactPerson}
+                        Contact: {clients.find(c => c.Id.toString() === formData.clientId)?.contactPerson_c || clients.find(c => c.Id.toString() === formData.clientId)?.contactPerson}
                       </div>
                     )}
                   </FormField>
